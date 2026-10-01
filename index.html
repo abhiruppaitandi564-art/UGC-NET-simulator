@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>UGC NET Mock Simulator</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
+<style>
+:root{--bg:#f2f4f7;--card:#fff;--tx:#222;--mut:#667;--bd:#d5d9e0;--pri:#1b5e9e;--grn:#4caf50;--red:#e8590c;--pur:#6a3fa0;--org:#f5a623;--blu:#5b7fc4;--nv:#e3e6ea;--teal:#2aa6c9}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#15181d;--card:#1f242b;--tx:#e8eaed;--mut:#9aa;--bd:#38404a;--nv:#38404a}}
+:root[data-theme=dark]{--bg:#15181d;--card:#1f242b;--tx:#e8eaed;--mut:#9aa;--bd:#38404a;--nv:#38404a}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,Arial,sans-serif}
+.hdr{background:var(--card);border-bottom:1px solid var(--bd);padding:8px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.logo{width:34px;height:34px;border-radius:50%;background:conic-gradient(var(--org),var(--grn),var(--blu),var(--org))}
+.brand{font-weight:700;font-size:13px;letter-spacing:.5px}.brand small{display:block;font-weight:400;color:var(--mut)}
+.sp{flex:1}.wrap{max-width:900px;margin:18px auto;padding:0 14px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:16px;margin-bottom:14px}
+h2,h3{margin:.2em 0 .5em}input,select,textarea{width:100%;padding:9px;border:1px solid var(--bd);border-radius:5px;background:var(--card);color:var(--tx);font:inherit;margin:4px 0 10px}
+input[type=radio],input[type=checkbox]{width:auto;margin:0 6px 0 0}
+button{font:inherit;cursor:pointer;border:1px solid var(--bd);border-radius:4px;padding:8px 14px;background:var(--card);color:var(--tx)}
+.b-p{background:var(--pri);color:#fff;border-color:var(--pri)}.b-g{background:var(--grn);color:#fff;border-color:var(--grn)}.b-o{background:var(--org);color:#222;border-color:var(--org)}.b-b{background:var(--blu);color:#fff;border-color:var(--blu)}.b-t{background:var(--teal);color:#fff;border-color:var(--teal)}.b-r{background:#c0392b;color:#fff;border-color:#c0392b}
+.hide{display:none!important}.err{color:#c0392b}.mut{color:var(--mut)}
+.login{max-width:380px;margin:40px auto}
+.timer{background:#2aa6c9;color:#fff;font-weight:700;padding:3px 12px;border-radius:14px;font-variant-numeric:tabular-nums}
+#exam{display:flex;flex-direction:column;height:100vh;height:100dvh}
+.cand{padding:6px 14px;display:flex;justify-content:space-between;align-items:center;background:var(--card);border-bottom:1px solid var(--bd);gap:8px}
+.main{flex:1;display:flex;min-height:0}
+.qp{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--card)}
+.qbody{flex:1;overflow:auto;padding:14px}
+.opt{display:flex;gap:10px;align-items:flex-start;padding:10px;border:1px solid transparent;border-radius:6px;cursor:pointer}
+.opt:hover{background:var(--bg)}.opt.sel{border-color:var(--pri);background:var(--bg)}
+.nav{padding:8px 10px;border-top:1px solid var(--bd);display:flex;gap:6px;flex-wrap:wrap}
+.nav button{font-size:13px;padding:8px 10px}
+.pal{width:300px;border-left:1px solid var(--bd);background:var(--card);display:flex;flex-direction:column}
+.legend{padding:10px;font-size:12px;display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.grid{padding:10px;overflow:auto;flex:1;display:grid;grid-template-columns:repeat(5,1fr);gap:6px;align-content:start}
+.q{height:36px;padding:0;border-radius:6px 6px 14px 14px;background:var(--nv);color:var(--tx);font-weight:600;position:relative}
+.q.s1{background:var(--red);color:#fff}.q.s2{background:var(--grn);color:#fff}.q.s3{background:var(--pur);color:#fff;border-radius:50%}.q.s4{background:var(--pur);color:#fff;border-radius:50%}
+.q.s4:after{content:"";position:absolute;right:1px;bottom:1px;width:10px;height:10px;border-radius:50%;background:var(--grn);border:1px solid #fff}
+.q.cur{outline:3px solid var(--pri)}
+.lg{display:inline-block;min-width:22px;text-align:center;color:#fff;border-radius:5px;padding:1px 4px;margin-right:4px;font-weight:600}
+.pbtn{display:none}
+@media(max-width:760px){.pal{position:fixed;right:0;top:0;bottom:0;width:86%;max-width:320px;z-index:5;transform:translateX(100%);transition:.2s;box-shadow:-4px 0 12px #0005}.pal.open{transform:none}.pbtn{display:inline-block}}
+.modal{position:fixed;inset:0;background:#0007;display:flex;align-items:center;justify-content:center;z-index:9;padding:14px}
+.modal .card{max-width:420px;width:100%}
+table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px solid var(--bd);padding:6px;text-align:left}
+.bar{height:12px;background:var(--nv);border-radius:6px;overflow:hidden}.bar i{display:block;height:100%;background:var(--pri)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}.stat{background:var(--bg);border-radius:8px;padding:10px;text-align:center}.stat b{font-size:22px;display:block}
+.tag{font-size:11px;padding:1px 6px;border-radius:9px;background:var(--nv)}
+.scroll{overflow-x:auto}
+</style></head><body>
+
+<div id="login"><div class="hdr"><div class="logo"></div><div class="brand">NATIONAL TESTING AGENCY<small>UGC NET Mock Simulator (unofficial practice tool)</small></div></div>
+<div class="card login"><h2>Candidate Login</h2>
+<label>Email</label><input id="lu" autocomplete="username"><label>Password</label><input id="lp" type="password" autocomplete="current-password" onkeydown="if(event.key=='Enter')login()">
+<button class="b-p" onclick="login()" style="width:100%">Login</button><p id="le" class="err"></p>
+<p class="mut" style="font-size:12px">Accounts are created by your admin. Contact them if you cannot log in.</p></div></div>
+
+<div id="home" class="hide"></div>
+<div id="manage" class="hide"></div>
+<div id="instr" class="hide"></div>
+<div id="exam" class="hide"></div>
+<div id="an" class="hide"></div>
+<div id="modal"></div>
+
+<script>
+const $=id=>document.getElementById(id);
+const VIEWS=['login','home','manage','instr','exam','an'];
+const show=v=>VIEWS.forEach(x=>$(x).classList.toggle('hide',x!=v));
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt=s=>{s=Math.max(0,Math.round(s));const h=Math.floor(s/3600),m=Math.floor(s%3600/60);return(h?String(h).padStart(2,'0')+':':'')+String(m).padStart(2,'0')+':'+String(s%60).padStart(2,'0')};
+const P1U=['Teaching Aptitude','Research Aptitude','Comprehension','Communication','Mathematical Reasoning','Logical Reasoning','Data Interpretation','ICT','People, Development & Environment','Higher Education System'];
+const SAMPLE=[
+["Teaching Aptitude","Which one of the following is the main objective of teaching?",["To give information related to the syllabus","To develop thinking power of the students","To dictate notes to students","To prepare students to pass the examination"],1],
+["Research Aptitude","Which of the following is a qualitative research method?",["Closed-ended survey","Ethnography","Controlled experiment","Regression analysis"],1],
+["Logical Reasoning","What comes next in the series 2, 4, 8, 16, ?",["24","30","32","64"],2],
+["ICT","What is the full form of URL?",["Uniform Resource Locator","Universal Reference Link","Unified Resource List","Uniform Reference Locator"],0],
+["Mathematical Reasoning","If 20% of a number x is 40, what is x?",["80","160","200","400"],2],
+["Communication","Which of the following is NOT an element of the basic communication process?",["Sender","Message","Receiver","Calculator"],3],
+["Higher Education System","UGC stands for:",["University Grants Commission","United Grants Committee","University Governing Council","Union Grants Commission"],0],
+["People, Development & Environment","Which of these gases is mainly responsible for the enhanced greenhouse effect?",["Oxygen","Nitrogen","Carbon dioxide","Argon"],2],
+["Data Interpretation","In a pie chart, a sector of 90° represents what percentage of the total?",["10%","20%","25%","50%"],2]
+].map((a,i)=>({id:'s'+i,paper:1,unit:a[0],text:a[1],opts:a[2],ans:a[3],src:'sample'}));
+let DB,ME,ex,tick,preview=[];
+function load(){try{DB=JSON.parse(localStorage.getItem('ugcsim'))}catch(e){}
+ if(!DB||!DB.users){DB={users:[{u:'admin',p:'admin123',name:'Administrator',role:'admin'}],qs:SAMPLE,res:[]}}}
+function save(){try{localStorage.setItem('ugcsim',JSON.stringify(DB))}catch(e){alert('Storage full or unavailable. Export your bank as JSON.')}}
+load();
+
+function login(){const u=DB.users.find(x=>x.u==$('lu').value.trim()&&x.p==$('lp').value);
+ if(!u){$('le').textContent='Invalid username or password.';return}
+ ME=u;$('le').textContent='';home()}
+function logout(){ME=null;clearInterval(tick);$('lp').value='';show('login')}
+function hdr(t){return `<div class="hdr"><div class="logo"></div><div class="brand">NATIONAL TESTING AGENCY<small>${t}</small></div><div class="sp"></div><span>${esc(ME.name)}</span><button onclick="logout()">Logout</button></div>`}
+
+function home(){show('home');
+ const mine=DB.res.filter(r=>r.user==ME.u).reverse();
+ $('home').innerHTML=hdr('Dashboard')+`<div class="wrap"><div class="card"><h2>Start a mock test</h2>
+ <label><input type="radio" name="mode" value="full" checked>Full exam (Paper 1 + Paper 2) – 3 hours, up to 150 questions</label><br>
+ <label><input type="radio" name="mode" value="p1">Paper 1 only – 1 hour, up to 50 questions</label><br>
+ <label><input type="radio" name="mode" value="p2">Paper 2 only – 2 hours, up to 100 questions</label><br><br>
+ <label><input type="checkbox" id="smart">Smart set: prioritise my weak units and questions I haven't seen</label><br><br>
+ <button class="b-p" onclick="toInstr()">Continue</button> <button onclick="manage()">Manage question bank</button>
+ <p class="mut">Question bank: ${DB.qs.filter(q=>q.paper==1).length} Paper 1, ${DB.qs.filter(q=>q.paper==2).length} Paper 2.</p></div>
+ <div class="card"><h3>Your past attempts</h3>${mine.length?`<div class="scroll"><table><tr><th>Date</th><th>Mode</th><th>Score</th><th>Accuracy</th><th></th></tr>${mine.map(r=>`<tr><td>${new Date(r.date).toLocaleString()}</td><td>${r.mode}</td><td>${r.score}/${r.max}</td><td>${r.acc}%</td><td><button onclick="analytics('${r.id}')">Analytics</button></td></tr>`).join('')}</table></div>`:'<p class="mut">No attempts yet.</p>'}</div></div>`}
+
+function toInstr(){const mode=document.querySelector('input[name=mode]:checked').value;const smart=$('smart').checked;
+ const n={full:150,p1:50,p2:100}[mode],mins={full:180,p1:60,p2:120}[mode];
+ const qs=pick(mode,smart);if(!qs.length){alert('No questions available for this mode. Add some in Manage question bank.');return}
+ ex={mode,smart,qs,mins,ans:qs.map(()=>null),st:qs.map(()=>0),t:qs.map(()=>0),cur:0};
+ show('instr');
+ $('instr').innerHTML=hdr('Instructions')+`<div class="wrap"><div class="card"><h2>General Instructions</h2><ol>
+ <li>Total duration of this test: <b>${mins/60>=1&&mins%60==0?mins/60+' hour(s)':mins+' minutes'}</b>. The countdown timer is shown top right; the test auto-submits when it reaches zero.</li>
+ <li>This test has <b>${qs.length}</b> multiple-choice question(s) (fewer than the real exam if your bank is small). Each has 4 options with one correct answer.</li>
+ <li>Each question carries <b>2 marks</b>. <b>There is no negative marking</b> for wrong answers, and no marks for unanswered questions.</li>
+ <li>Question palette colours:
+ <div style="margin:6px 0"><span class="lg" style="background:var(--nv);color:var(--tx)">1</span> Not visited &nbsp; <span class="lg" style="background:var(--red)">2</span> Not answered &nbsp; <span class="lg" style="background:var(--grn)">3</span> Answered &nbsp; <span class="lg" style="background:var(--pur)">4</span> Marked for review &nbsp; <span class="lg" style="background:var(--pur)">5</span> Answered &amp; marked for review (will be evaluated)</div></li>
+ <li>Click an option's radio button to select; click it again or press <b>Clear Response</b> to deselect.</li>
+ <li>You <b>must click “Save &amp; Next”</b> (or “Save &amp; Mark for Review”) to save an answer. Unsaved selections are discarded when you move away.</li>
+ <li>“Mark for Review &amp; Next” marks a question for review without answering it.</li>
+ <li>Click a number in the palette to jump to any question. Use “Submit” at the end to finish; you will be asked to confirm.</li>
+ <li>You may review and change saved answers any time before submitting or before time runs out.</li></ol>
+ <p class="mut">This is an unofficial practice tool. Verify exam rules (question counts, marking) against the current official NTA UGC NET bulletin.</p>
+ <label><input type="checkbox" id="agree" onchange="$('st').disabled=!this.checked">I have read and understood the instructions.</label><br><br>
+ <button onclick="home()">Back</button> <button id="st" class="b-g" disabled onclick="startExam()">Start Exam</button></div></div>`}
+
+function pick(mode,smart){
+ let pool=DB.qs.filter(q=>mode=='full'||q.paper==(mode=='p1'?1:2));
+ const seen=new Set(),ua={};
+ DB.res.filter(r=>r.user==ME.u).forEach(r=>r.items.forEach(i=>{seen.add(i.id);const o=ua[i.unit]||(ua[i.unit]={c:0,n:0});o.n++;if(i.ok)o.c++}));
+ const w=q=>{let x=Math.random();if(smart){const o=ua[q.unit];x*=(o?1.2-o.c/o.n:1)+(seen.has(q.id)?0:.6)}return x};
+ pool=pool.map(q=>[w(q),q]).sort((a,b)=>b[0]-a[0]).map(a=>a[1]);
+ const p1=pool.filter(q=>q.paper==1).slice(0,50),p2=pool.filter(q=>q.paper==2).slice(0,100);
+ return mode=='p1'?p1:mode=='p2'?p2:p1.concat(p2)}
+
+function startExam(){ex.start=Date.now();ex.end=ex.start+ex.mins*60000;ex.ts=Date.now();show('exam');
+ $('exam').innerHTML=`<div class="hdr" style="padding:6px 14px"><div class="logo"></div><div class="brand">NATIONAL TESTING AGENCY<small>Excellence in Assessment</small></div></div>
+ <div class="cand"><b>[ ${esc(ME.name)} ]</b><span>Remaining Time: <span class="timer" id="tm"></span> <button class="pbtn" onclick="$('pal').classList.toggle('open')">Palette</button></span></div>
+ <div class="main"><div class="qp"><div class="qbody" id="qb"></div>
+ <div class="nav"><button class="b-g" onclick="act('save')">Save &amp; Next</button><button class="b-o" onclick="act('savemark')">Save &amp; Mark for Review</button><button onclick="act('clear')">Clear Response</button><button class="b-b" onclick="act('mark')">Mark for Review &amp; Next</button>
+ <span class="sp"></span><button onclick="go(ex.cur-1)">&lt;&lt; Back</button><button onclick="go(ex.cur+1)">Next &gt;&gt;</button><button class="b-t" onclick="confirmSubmit()">Submit</button></div></div>
+ <div class="pal" id="pal"><div class="legend" id="lgd"></div><div class="grid" id="gr"></div></div></div>`;
+ go(0);clearInterval(tick);tick=setInterval(tk,500);tk()}
+function tk(){const r=ex.end-Date.now();$('tm').textContent=fmt(r/1000);if(r<=0){clearInterval(tick);submit(true)}}
+function lap(){ex.t[ex.cur]+=(Date.now()-ex.ts)/1000;ex.ts=Date.now()}
+function go(i){if(i<0||i>=ex.qs.length)return;lap();
+ if(ex.st[ex.cur]!=2&&ex.st[ex.cur]!=4)ex.ans[ex.cur]=null;
+ ex.cur=i;if(!ex.st[i])ex.st[i]=1;draw();$('pal').classList.remove('open')}
+function sel(k){ex.ans[ex.cur]=ex.ans[ex.cur]===k?null:k;draw(1)}
+function act(a){const c=ex.cur,has=ex.ans[c]!==null;
+ if(a=='clear'){ex.ans[c]=null;ex.st[c]=1;draw();return}
+ if(a=='save'){if(has)ex.st[c]=2;else ex.st[c]=1}
+ if(a=='savemark'){ex.st[c]=has?4:3}
+ if(a=='mark'){ex.ans[c]=null;ex.st[c]=3}
+ if(c<ex.qs.length-1)go(c+1);else draw()}
+function draw(){const q=ex.qs[ex.cur];
+ $('qb').innerHTML=`<p class="mut">Paper ${q.paper} · ${esc(q.unit)} · Question ${ex.cur+1} of ${ex.qs.length}</p><p><b>${ex.cur+1}.</b> ${esc(q.text)}</p>`+q.opts.map((o,k)=>`<label class="opt ${ex.ans[ex.cur]===k?'sel':''}" onclick="event.preventDefault();sel(${k})"><input type="radio" ${ex.ans[ex.cur]===k?'checked':''}><span>${esc(o)}</span></label>`).join('');
+ const c=[0,0,0,0,0];ex.st.forEach(s=>c[s]++);
+ $('lgd').innerHTML=`<span><span class="lg" style="background:var(--nv);color:var(--tx)">${c[0]}</span>Not Visited</span><span><span class="lg" style="background:var(--red)">${c[1]}</span>Not Answered</span><span><span class="lg" style="background:var(--grn)">${c[2]}</span>Answered</span><span><span class="lg" style="background:var(--pur)">${c[3]}</span>Marked</span><span style="grid-column:span 2"><span class="lg" style="background:var(--pur)">${c[4]}</span>Answered &amp; Marked (evaluated)</span>`;
+ $('gr').innerHTML=ex.qs.map((_,i)=>`<button class="q s${ex.st[i]} ${i==ex.cur?'cur':''}" onclick="go(${i})">${String(i+1).padStart(2,'0')}</button>`).join('')}
+function confirmSubmit(){lap();const c=[0,0,0,0,0];ex.st.forEach(s=>c[s]++);
+ $('modal').innerHTML=`<div class="modal"><div class="card"><h3>Submit exam?</h3><table><tr><td>Answered</td><td>${c[2]+c[4]}</td></tr><tr><td>Not answered</td><td>${c[1]+c[3]}</td></tr><tr><td>Not visited</td><td>${c[0]}</td></tr><tr><td>Marked for review</td><td>${c[3]+c[4]}</td></tr></table><p class="mut">You cannot change answers after submitting.</p><button onclick="$('modal').innerHTML=''">Go back</button> <button class="b-r" onclick="submit()">Yes, submit</button></div></div>`}
+function submit(auto){clearInterval(tick);lap();$('modal').innerHTML='';
+ const items=ex.qs.map((q,i)=>{const ev=ex.st[i]==2||ex.st[i]==4,sel=ev?ex.ans[i]:null;return{id:q.id,unit:q.unit,paper:q.paper,sel,ans:q.ans,ok:sel!==null&&sel===q.ans,t:Math.round(ex.t[i]),text:q.text,opts:q.opts}});
+ const ok=items.filter(i=>i.ok).length,att=items.filter(i=>i.sel!==null).length;
+ const r={id:'r'+Date.now(),user:ME.u,date:Date.now(),mode:{full:'Full (P1+P2)',p1:'Paper 1',p2:'Paper 2'}[ex.mode],smart:ex.smart,allowed:ex.mins*60,dur:Math.round((Date.now()-ex.start)/1000),auto:!!auto,items,score:ok*2,max:items.length*2,ok,att,acc:att?Math.round(ok/att*100):0};
+ DB.res.push(r);save();analytics(r.id)}
+
+function analytics(id){const r=DB.res.find(x=>x.id==id);show('an');
+ const wr=r.att-r.ok,un=r.items.length-r.att,avg=r.dur/r.items.length,mx=Math.max(...r.items.map(i=>i.t),1);
+ const U={};r.items.forEach(i=>{const o=U[i.unit]||(U[i.unit]={n:0,a:0,c:0,t:0});o.n++;o.t+=i.t;if(i.sel!==null)o.a++;if(i.ok)o.c++});
+ const us=Object.entries(U).map(([k,o])=>({k,...o,p:Math.round(o.c/o.n*100)})).sort((a,b)=>a.p-b.p);
+ $('an').innerHTML=hdr('Result &amp; Analytics')+`<div class="wrap"><div class="card"><h2>${r.mode} – ${new Date(r.date).toLocaleString()}</h2>${r.auto?'<p class="err">Time expired – auto-submitted.</p>':''}
+ <div class="stats"><div class="stat"><b>${r.score}/${r.max}</b>Score</div><div class="stat"><b>${r.ok}</b>Correct</div><div class="stat"><b>${wr}</b>Wrong</div><div class="stat"><b>${un}</b>Unattempted</div><div class="stat"><b>${r.acc}%</b>Accuracy (of attempted)</div><div class="stat"><b>${fmt(r.dur)}</b>Time taken (of ${fmt(r.allowed)})</div><div class="stat"><b>${Math.round(avg)}s</b>Avg per question</div></div></div>
+ <div class="card"><h3>Unit-wise strengths &amp; weaknesses</h3><p class="mut">Strong ≥ 70% correct, Weak &lt; 50%. Small question counts make this a rough guide.</p>${us.map(u=>`<div style="margin:8px 0"><div style="display:flex;justify-content:space-between;gap:8px"><span>${esc(u.k)} <span class="tag">${u.p>=70?'Strong':u.p<50?'Weak':'Average'}</span></span><span>${u.c}/${u.n} · ${u.p}% · avg ${Math.round(u.t/u.n)}s</span></div><div class="bar"><i style="width:${u.p}%;background:${u.p>=70?'var(--grn)':u.p<50?'var(--red)':'var(--org)'}"></i></div></div>`).join('')}</div>
+ <div class="card"><h3>Question-wise speed &amp; review</h3><div class="scroll"><table><tr><th>#</th><th>Unit</th><th>Result</th><th>Your / Correct</th><th>Time</th><th></th></tr>${r.items.map((i,n)=>`<tr><td>${n+1}</td><td>${esc(i.unit)}</td><td>${i.sel===null?'Skipped':i.ok?'✔ Right':'✘ Wrong'}</td><td>${i.sel===null?'–':'ABCD'[i.sel]} / ${'ABCD'[i.ans]}</td><td>${i.t}s</td><td style="min-width:90px"><div class="bar"><i style="width:${i.t/mx*100}%"></i></div></td></tr>`).join('')}</table></div></div>
+ <button class="b-p" onclick="home()">Back to dashboard</button></div>`}
+
+/* ---------- Manage: users, PDF upload, bank ---------- */
+function manage(){show('manage');const adm=ME.role=='admin';
+ $('manage').innerHTML=hdr('Question Bank')+`<div class="wrap"><button onclick="home()">← Dashboard</button>
+ <div class="card"><h3>Upload previous-year paper (PDF)</h3><p class="mut">Text is extracted in your browser and split into questions on a best-effort basis. Scanned/image PDFs won't work. Always check the preview and set the correct answers before saving.</p>
+ <input type="file" id="pf" accept="application/pdf" onchange="readPdf(this.files[0])">
+ <label>Paper</label><select id="pp"><option value="1">Paper 1</option><option value="2">Paper 2</option></select>
+ <div id="pv"></div></div>
+ <div class="card"><h3>Add a question manually</h3><label>Paper</label><select id="mp"><option value="1">Paper 1</option><option value="2">Paper 2</option></select>
+ <label>Unit / topic</label><input id="mu" list="ul"><datalist id="ul">${P1U.map(u=>`<option>${u}`).join('')}</datalist>
+ <label>Question</label><textarea id="mq" rows="2"></textarea>
+ ${[0,1,2,3].map(k=>`<input id="mo${k}" placeholder="Option ${'ABCD'[k]}">`).join('')}
+ <label>Correct option</label><select id="ma"><option value="0">A</option><option value="1">B</option><option value="2">C</option><option value="3">D</option></select>
+ <button class="b-p" onclick="addQ()">Add question</button></div>
+ <div class="card"><h3>Bank (${DB.qs.length})</h3><button onclick="expo()">Export JSON</button> <label class="b-t" style="display:inline-block;padding:8px 14px;border-radius:4px;cursor:pointer">Import JSON<input type="file" accept=".json" class="hide" onchange="impo(this.files[0])"></label>
+ <div class="scroll"><table><tr><th>P</th><th>Unit</th><th>Question</th><th>Src</th><th></th></tr>${DB.qs.map((q,i)=>`<tr><td>${q.paper}</td><td>${esc(q.unit)}</td><td>${esc(q.text.slice(0,70))}</td><td>${esc(q.src)}</td><td>${adm||q.src==ME.u?`<button onclick="delQ(${i})">✕</button>`:''}</td></tr>`).join('')}</table></div></div>
+ ${adm?`<div class="card"><h3>Users (admin)</h3><div class="scroll"><table><tr><th>Name</th><th>Username</th><th></th></tr>${DB.users.map((u,i)=>`<tr><td>${esc(u.name)}</td><td>${esc(u.u)} <span class="tag">${u.role}</span></td><td><button onclick="pw(${i})">Reset password</button> ${u.u!='admin'?`<button onclick="delU(${i})">✕</button>`:''}</td></tr>`).join('')}</table></div>
+ <h4>Create user</h4><input id="nn" placeholder="Full name"><input id="nu" placeholder="Username"><input id="np" placeholder="Password"><button class="b-p" onclick="addU()">Create</button></div>`:''}</div>`}
+function addU(){const n=$('nn').value.trim(),u=$('nu').value.trim(),p=$('np').value;if(!n||!u||!p||DB.users.some(x=>x.u==u)){alert('Fill all fields with a unique username.');return}DB.users.push({u,p,name:n,role:'user'});save();manage()}
+function delU(i){if(confirm('Delete this user?')){DB.users.splice(i,1);save();manage()}}
+function pw(i){const p=prompt('New password:');if(p){DB.users[i].p=p;save();alert('Updated.')}}
+function addQ(){const o=[0,1,2,3].map(k=>$('mo'+k).value.trim());if(!$('mq').value.trim()||o.some(x=>!x)){alert('Enter question and all 4 options.');return}
+ DB.qs.push({id:'q'+Date.now(),paper:+$('mp').value,unit:$('mu').value.trim()||'General',text:$('mq').value.trim(),opts:o,ans:+$('ma').value,src:ME.role=='admin'?'admin':ME.u});save();manage()}
+function delQ(i){DB.qs.splice(i,1);save();manage()}
+function expo(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(DB.qs)],{type:'application/json'}));a.download='ugc-net-bank.json';a.click()}
+function impo(f){if(!f)return;f.text().then(t=>{try{const a=JSON.parse(t);a.forEach(q=>{if(q.text&&q.opts&&q.opts.length==4)DB.qs.push({id:'q'+Date.now()+Math.random(),paper:q.paper||1,unit:q.unit||'General',text:q.text,opts:q.opts,ans:q.ans|0,src:ME.u})});save();manage()}catch(e){alert('Invalid JSON')}})}
+async function readPdf(f){if(!f)return;$('pv').textContent='Reading PDF…';
+ try{if(!window.pdfjsLib)throw Error('PDF library failed to load');
+  pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  const pdf=await pdfjsLib.getDocument({data:await f.arrayBuffer()}).promise;let txt='';
+  for(let p=1;p<=pdf.numPages;p++){const c=await(await pdf.getPage(p)).getTextContent();let y=null,line='';
+   c.items.forEach(it=>{const yy=Math.round(it.transform[5]);if(y!==null&&Math.abs(yy-y)>3){txt+=line+'\n';line=''}y=yy;line+=it.str+' '});txt+=line+'\n'}
+  preview=parse(txt);
+  $('pv').innerHTML=preview.length?`<p><b>${preview.length}</b> question(s) detected. Set answers/units, remove bad ones, then save.</p>`+preview.map((q,i)=>`<div class="card" id="pq${i}"><p>${esc(q.text)}</p>${q.opts.map((o,k)=>`<div class="mut">${'ABCD'[k]}. ${esc(o)}</div>`).join('')}<select onchange="preview[${i}].ans=+this.value">${[0,1,2,3].map(k=>`<option value="${k}" ${q.ans==k?'selected':''}>Answer ${'ABCD'[k]}</option>`).join('')}</select><input placeholder="Unit" value="${esc(q.unit)}" oninput="preview[${i}].unit=this.value" list="ul"><button onclick="preview[${i}]=null;$('pq${i}').remove()">Remove</button></div>`).join('')+`<button class="b-g" onclick="savePrev()">Save to bank</button>`:'<p class="err">No questions detected. The PDF format may be unsupported (e.g. scanned images). Try manual add or JSON import.</p>'
+ }catch(e){$('pv').innerHTML='<p class="err">Could not read PDF: '+esc(e.message)+'</p>'}}
+function parse(t){const out=[];const blocks=t.split(/\n\s*(?=(?:Q\.?\s*)?\d{1,3}\s*[.)]\s)/);
+ blocks.forEach(b=>{b=b.replace(/\s+/g,' ').trim();const m=b.match(/^(?:Q\.?\s*)?\d{1,3}\s*[.)]\s*(.*)$/);if(!m)return;
+  const body=m[1],re=/(?:^|\s)\(?([1-4A-Da-d])[.)]\s/g,pos=[];let x;
+  while((x=re.exec(body)))pos.push([x.index,re.lastIndex]);
+  if(pos.length<4)return;const s=pos.slice(-4);
+  const text=body.slice(0,s[0][0]).trim(),opts=s.map((p,i)=>body.slice(p[1],i<3?s[i+1][0]:undefined).replace(/Ans(wer)?.*$/i,'').trim());
+  const a=body.match(/Ans(?:wer)?\s*[:\-]?\s*\(?([1-4A-Da-d])/i);let ans=0;if(a)ans='1234'.includes(a[1])?+a[1]-1:'abcd'.indexOf(a[1].toLowerCase());
+  if(text&&opts.every(o=>o))out.push({text,opts,ans,unit:'General'})});return out}
+function savePrev(){const p=+$('pp').value;let n=0;preview.filter(Boolean).forEach(q=>{DB.qs.push({id:'q'+Date.now()+Math.random(),paper:p,unit:q.unit||'General',text:q.text,opts:q.opts,ans:q.ans,src:ME.role=='admin'?'admin':ME.u});n++});save();preview=[];alert(n+' question(s) saved.');manage()}
+</script>
+<script>
+/* ===== Supabase backend layer (overrides local-storage versions above) ===== */
+const SUPABASE_URL='https://aapikkveroetphllelef.supabase.co', SUPABASE_KEY='sb_publishable_Y8CyIAOigEVgll9ZoMiKww_fGQevpNO';
+let sb=null;
+try{sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY)}catch(e){}
+DB={users:[],qs:[],res:[]};
+function save(){}
+const NOCFG=()=>!sb||SUPABASE_URL.startsWith('PASTE');
+async function boot(user){
+ const {data:p}=await sb.from('profiles').select('*').eq('id',user.id).maybeSingle();
+ ME={u:user.email,id:user.id,name:(p&&p.name)||user.email,role:(p&&p.role)||'user'};
+ const q=await sb.from('questions').select('*').order('created_at');
+ DB.qs=(q.data||[]).map(r=>({id:r.id,paper:r.paper,unit:r.unit,text:r.text,opts:r.opts,ans:r.ans,src:r.src}));
+ const a=await sb.from('attempts').select('data').order('created_at');
+ DB.res=(a.data||[]).map(r=>r.data);
+ DB.users=[];if(ME.role=='admin'){const u=await sb.from('profiles').select('*');DB.users=(u.data||[]).map(r=>({u:r.email,name:r.name,role:r.role}))}
+ home()}
+async function login(){
+ if(NOCFG()){$('le').textContent='Backend keys not set. See SETUP.md.';return}
+ $('le').textContent='Signing in…';
+ const {data,error}=await sb.auth.signInWithPassword({email:$('lu').value.trim(),password:$('lp').value});
+ if(error){$('le').textContent=error.message;return}
+ $('le').textContent='';await boot(data.user)}
+async function logout(){clearInterval(tick);if(sb)await sb.auth.signOut();ME=null;DB={users:[],qs:[],res:[]};$('lp').value='';show('login')}
+async function persist(q){
+ const {data,error}=await sb.from('questions').insert({paper:q.paper,unit:q.unit,text:q.text,opts:q.opts,ans:q.ans,src:q.src}).select().single();
+ if(error){alert('Could not save a question: '+error.message);return}q.id=data.id}
+const _addQ=addQ;addQ=function(){const n=DB.qs.length;_addQ();DB.qs.slice(n).forEach(persist)};
+const _savePrev=savePrev;savePrev=function(){const n=DB.qs.length;_savePrev();DB.qs.slice(n).forEach(persist)};
+const _delQ=delQ;delQ=function(i){const q=DB.qs[i];_delQ(i);if(q)sb.from('questions').delete().eq('id',q.id).then(r=>{if(r.error)alert('Delete failed: '+r.error.message)})};
+impo=function(f){if(!f)return;f.text().then(t=>{try{const a=JSON.parse(t),n=DB.qs.length;
+ a.forEach(q=>{if(q.text&&q.opts&&q.opts.length==4)DB.qs.push({paper:q.paper||1,unit:q.unit||'General',text:q.text,opts:q.opts,ans:q.ans|0,src:ME.u})});
+ DB.qs.slice(n).forEach(persist);manage()}catch(e){alert('Invalid JSON')}})};
+const _submit=submit;submit=function(auto){_submit(auto);const r=DB.res[DB.res.length-1];
+ sb.from('attempts').insert({data:r}).then(x=>{if(x.error)alert('Result could not be saved online: '+x.error.message)})};
+const um=()=>alert('Create, reset or delete users in the Supabase dashboard: Authentication → Users. See SETUP.md.');
+addU=um;delU=um;pw=um;
+(async()=>{if(NOCFG())return;const {data}=await sb.auth.getSession();if(data.session)boot(data.session.user)})();
+</script>
+</body></html>
